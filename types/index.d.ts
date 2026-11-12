@@ -22,6 +22,7 @@ declare namespace plugin {
     | 'detect-non-literal-regexp'
     | 'detect-non-literal-require'
     | 'detect-object-injection'
+    | 'detect-prototype-pollution'
     | 'detect-possible-timing-attacks'
     | 'detect-pseudoRandomBytes'
     | 'detect-unsafe-regex';
