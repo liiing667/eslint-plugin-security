@@ -53,6 +53,40 @@ tester.run(ruleName, rule, {
     import child_process from 'child_process';
     const FOO = 'ls';
     child_process.exec(FOO);`,
+    `
+    var cp = require('node:child_process');
+    cp.execSync('ls -la');`,
+    `
+    const { execSync } = require('child_process');
+    execSync('ls ' + '-la');`,
+    `
+    const { execSync: runSync } = require('node:child_process');
+    runSync('ls');`,
+    `
+    var child = require('child_process');
+    child.execSync(CMD);
+    const CMD = 'ls';`,
+    `
+    import { execSync } from 'child_process';
+    execSync(\`ls \${DIR}\`);
+    const DIR = '/tmp';`,
+    "var { spawn } = require('child_process'); spawn(str, { shell: false });",
+    "var child = require('child_process'); child.spawn('ls', ['-la'], { shell: false });",
+    "var child = require('node:child_process'); child.spawn('ls', { shell: 0 });",
+    "var child = require('child_process'); child.spawn('ls', ['-la']);",
+    `
+    const { execFile } = require('child_process');
+    execFile('ls', ['-la'], { shell: false });`,
+    `
+    var cp = require('node:child_process');
+    cp.spawn('ls ' + cmd, { shell: false });`,
+    `
+    var cp = require('child_process');
+    cp.spawn(\`ls \${DIR}\`);
+    const DIR = '/tmp';`,
+    `
+    var cp = require('child_process');
+    cp.execFile('ls', args, { shell: false });`,
   ],
   invalid: [
     {
@@ -134,6 +168,60 @@ tester.run(ruleName, rule, {
       const {exec} = require('node:child_process');
       exec(str)`,
       errors: [{ message: 'Found child_process.exec() with non Literal first argument', line: 3 }],
+    },
+    {
+      code: "var child = require('child_process'); child.execSync(req.body.cmd)",
+      errors: [{ message: 'Found child_process.execSync() with non Literal first argument' }],
+    },
+    {
+      code: "var child = require('node:child_process'); child.execSync(com)",
+      errors: [{ message: 'Found child_process.execSync() with non Literal first argument' }],
+    },
+    {
+      code: `
+      const { execSync } = require('child_process');
+      execSync(req.body.cmd)`,
+      errors: [{ message: 'Found child_process.execSync() with non Literal first argument', line: 3 }],
+    },
+    {
+      code: `
+      const { execSync: runSync } = require('node:child_process');
+      runSync(cmd)`,
+      errors: [{ message: 'Found child_process.execSync() with non Literal first argument', line: 3 }],
+    },
+    {
+      code: `
+      import { execSync } from 'child_process';
+      execSync(userInput)`,
+      errors: [{ message: 'Found child_process.execSync() with non Literal first argument', line: 3 }],
+    },
+    {
+      code: "var cp = require('child_process'); cp.spawn('ls ' + userInput, { shell: true })",
+      errors: [{ message: 'Found child_process.spawn() with non Literal first argument and shell enabled' }],
+    },
+    {
+      code: "var cp = require('node:child_process'); cp.spawnSync(cmd, { shell: true })",
+      errors: [{ message: 'Found child_process.spawnSync() with non Literal first argument and shell enabled' }],
+    },
+    {
+      code: `
+      const { spawn } = require('child_process');
+      spawn(\`ls \${userInput}\`, { shell: true })`,
+      errors: [{ message: 'Found child_process.spawn() with non Literal first argument and shell enabled', line: 3 }],
+    },
+    {
+      code: "var cp = require('child_process'); cp.execFile(userInput, ['-la'], { shell: true })",
+      errors: [{ message: 'Found child_process.execFile() with non Literal first argument and shell enabled' }],
+    },
+    {
+      code: "var cp = require('node:child_process'); cp.execFileSync(cmd, args, { shell: '/bin/sh' })",
+      errors: [{ message: 'Found child_process.execFileSync() with non Literal first argument and shell enabled' }],
+    },
+    {
+      code: `
+      var cp = require('child_process');
+      cp.spawn(userInput, { shell: shellPath })`,
+      errors: [{ message: 'Found child_process.spawn() with non Literal first argument and shell enabled', line: 3 }],
     },
   ],
 });
