@@ -23,6 +23,17 @@ tester.run(ruleName, require(`../../rules/${ruleName}`), {
         },
       },
     },
+    {
+      code: "const path = require('path'); const utils = require(path.join(__dirname, 'utils'));",
+      languageOptions: {
+        globals: {
+          __dirname: 'readonly',
+        },
+      },
+    },
+    {
+      code: "const pkg = require(require.resolve('eslint/package.json'));",
+    },
   ],
   invalid: [
     {

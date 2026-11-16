@@ -267,6 +267,50 @@ describe('isStaticExpression', () => {
         `,
         result: [false, false],
       },
+      {
+        code: `
+        target(new URL('../db.sqlite', import.meta.url));
+        target(new URL('https://example.com/static'));
+        `,
+        result: [true, true],
+      },
+      {
+        code: `
+        import url from 'node:url';
+        target(url.fileURLToPath(new URL('../db.sqlite', import.meta.url)));
+        `,
+        result: [true],
+      },
+      {
+        code: `
+        import { URL } from 'node:url';
+        target(new URL('../db.sqlite', import.meta.url));
+        `,
+        result: [true],
+      },
+      {
+        code: `
+        const { URL } = require('node:url');
+        target(new URL('../db.sqlite', import.meta.url));
+        `,
+        result: [true],
+      },
+      {
+        code: `
+        target(new URL(req.query.name, import.meta.url));
+        target(new URL('../db.sqlite', req.query.base));
+        target(new URL());
+        target(new URL(foo));
+        `,
+        result: [false, false, false, false],
+      },
+      {
+        code: `
+        const URL = require('./custom-url');
+        target(new URL('../db.sqlite', import.meta.url));
+        `,
+        result: [false],
+      },
     ]) {
       it(code, () => {
         deepStrictEqual(getIsStaticExpressionResult(code), result);

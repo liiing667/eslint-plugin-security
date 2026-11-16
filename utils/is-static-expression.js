@@ -84,7 +84,14 @@ function isStaticExpression({ node, scope }) {
         return false;
       }
     }
-    return isStaticPath(node) || isStaticFileURLToPath(node) || isStaticImportMetaProperty(node) || isStaticRequireResolve(node) || isStaticCwd(node);
+    return (
+      isStaticPath(node) ||
+      isStaticFileURLToPath(node) ||
+      isStaticNewURL(node) ||
+      isStaticImportMetaProperty(node) ||
+      isStaticRequireResolve(node) ||
+      isStaticCwd(node)
+    );
   }
 
   /**
@@ -146,6 +153,38 @@ function isStaticExpression({ node, scope }) {
     let name = pathInfo.path[0];
     if (name !== 'fileURLToPath') {
       return false;
+    }
+    return Boolean(node.arguments.length) && node.arguments.every(isStatic);
+  }
+
+  /**
+   * Checks whether the given expression is a static `new URL()`.
+   *
+   * A `new URL(path, base)` expression is static if every argument is static
+   * and `URL` refers to the global constructor or the one exported by the
+   * `url` module. This covers the common ESM idiom
+   * `new URL('../db.sqlite', import.meta.url)`, while still flagging
+   * expressions built from user input such as `new URL(req.query.name, import.meta.url)`.
+   *
+   * @param {import("estree").Expression} node The node to check.
+   * @returns {boolean} if true, the given expression is a static `new URL()`.
+   */
+  function isStaticNewURL(node) {
+    if (node.type !== 'NewExpression' || node.callee.type !== 'Identifier' || node.callee.name !== 'URL') {
+      return false;
+    }
+    const variable = findVariable(scope, node.callee.name);
+    if (variable && variable.defs.length !== 0) {
+      // It is not the global `URL` constructor, so only accept the one
+      // imported from the `url` module.
+      const pathInfo = getImportAccessPath({
+        node: node.callee,
+        scope,
+        packageNames: URL_PACKAGE_NAMES,
+      });
+      if (!pathInfo || pathInfo.path.length !== 1 || pathInfo.path[0] !== 'URL') {
+        return false;
+      }
     }
     return Boolean(node.arguments.length) && node.arguments.every(isStatic);
   }

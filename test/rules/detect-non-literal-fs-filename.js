@@ -79,6 +79,28 @@ tester.run(ruleName, require(`../../rules/${ruleName}`), {
         },
       },
     },
+    // ESM static chain: new URL + import.meta.url + fileURLToPath
+    `
+    import fs from 'fs';
+    import { fileURLToPath } from 'node:url';
+    const db = fs.readFileSync(fileURLToPath(new URL('../db.sqlite', import.meta.url)), 'utf-8');`,
+    `
+    import fs from 'fs';
+    import url from 'node:url';
+    const dbUrl = new URL('../db.sqlite', import.meta.url);
+    const db = fs.readFileSync(url.fileURLToPath(dbUrl), 'utf-8');`,
+    // require-based static chain
+    {
+      code: `
+      const fs = require('fs');
+      const path = require('path');
+      const db = fs.readFileSync(path.join(__dirname, '../db.sqlite'), 'utf-8');`,
+      languageOptions: {
+        globals: {
+          __dirname: 'readonly',
+        },
+      },
+    },
   ],
   invalid: [
     /// requires
@@ -213,6 +235,21 @@ tester.run(ruleName, require(`../../rules/${ruleName}`), {
             import fs from 'fs';
             import path from 'path';
             const key = fs.readFileSync(path.resolve(import.meta[prop], './index.html'));`,
+      errors: [{ message: 'Found readFileSync from package "fs" with non literal argument at index 0' }],
+    },
+    // ESM chain containing user input must still be reported
+    {
+      code: `
+            import fs from 'fs';
+            import { fileURLToPath } from 'node:url';
+            const db = fs.readFileSync(fileURLToPath(new URL(req.query.name, import.meta.url)), 'utf-8');`,
+      errors: [{ message: 'Found readFileSync from package "fs" with non literal argument at index 0' }],
+    },
+    {
+      code: `
+            import fs from 'fs';
+            import { fileURLToPath } from 'node:url';
+            const db = fs.readFileSync(fileURLToPath(new URL('../db.sqlite', req.query.base)), 'utf-8');`,
       errors: [{ message: 'Found readFileSync from package "fs" with non literal argument at index 0' }],
     },
   ],
