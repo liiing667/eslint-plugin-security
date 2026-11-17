@@ -53,7 +53,9 @@ false
 [ 8, 487126563 ] <- Added 12 characters and you see it bumps up significantly
 ```
 
-One way you can check regular expressions for badness in an automated way is by using a module from [substack](https://twitter.com/substack) called [safe-regex](https://www.npmjs.org/package/safe-regex). It's prone to false positives, however, it can be useful to point to potentially vulnerable regular expressions you would have otherwise missed in your code.
+One way you can check regular expressions for badness in an automated way is the [`security/detect-unsafe-regex`](rules/detect-unsafe-regex.md) rule in this plugin. It uses a configurable in-repo static analysis (see `utils/unsafe-regex.js`) that recognizes nested quantifiers, ambiguous alternations, and quantified backreferences, and reports exactly which structure was matched and where.
+
+Historically the rule delegated to a module from [substack](https://twitter.com/substack) called [safe-regex](https://www.npmjs.org/package/safe-regex). That package is no longer maintained and only returned a boolean verdict, so the rule now performs its own analysis. It's prone to false positives, however, it can be useful to point to potentially vulnerable regular expressions you would have otherwise missed in your code.
 
 Here is a rule for eslint that you can use to test your JavaScript regular expressions:
 
